@@ -4,7 +4,7 @@
   gather_facts: False
 
   vars_files:
-    - ./cau_vault
+    - ./files/cau_vault
 
   vars:
     new_user: ansible
