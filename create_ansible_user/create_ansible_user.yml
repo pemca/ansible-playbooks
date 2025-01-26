@@ -1,0 +1,48 @@
+---
+- name: Bootstrap ansible user on hosts
+  hosts: all
+  gather_facts: False
+
+  vars_files:
+    - ../../.vault/cau_vault
+
+  vars:
+    new_user: ansible
+    new_password: "{{ ansible_create_user_pass }}"  # Replace with a secure password
+    ansible_ssh_key: "{{ lookup('file', 'files/ansible_id_rsa.pub') }}"  # Path to public key file
+    sudoers_file_path: "/etc/sudoers.d/{{ new_user }}"
+
+  tasks:
+    - name: Create ansible user
+      raw: useradd -m -s /bin/bash {{ new_user }}
+
+    - name: Set password for ansible user
+      raw: echo "{{ new_user }}:{{ new_password }}" | chpasswd
+
+    - name: Create .ssh directory for ansible user
+      raw: mkdir -p /home/{{ new_user }}/.ssh && chmod 700 /home/{{ new_user }}/.ssh && chown {{ new_user }}:{{ new_user }} /home/{{ new_user }}/.ssh
+
+    - name: Upload public key for ansible user
+      copy:
+        content: "{{ ansible_ssh_key }}"
+        dest: "/home/{{ new_user }}/.ssh/authorized_keys"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: '0600'
+
+    - name: Add ansible user to sudoers (passwordless)
+      copy:
+        content: "{{ new_user }} ALL=(ALL) NOPASSWD:ALL"
+        dest: "{{ sudoers_file_path }}"
+        owner: root
+        group: root
+        mode: '0440'
+
+    - name: Add ansible user to sudoers (with password prompt, example)
+      copy:
+        content: "{{ new_user }} ALL=(ALL) ALL"
+        dest: "{{ sudoers_file_path }}_with_password"
+        owner: root
+        group: root
+        mode: '0440'
+

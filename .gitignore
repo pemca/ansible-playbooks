@@ -1,0 +1,5 @@
+# no logs 
+*.log
+
+# no inventory
+#/inventory
